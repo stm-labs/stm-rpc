@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>ru.stm</groupId>
+        <groupId>ru.stm.rpc</groupId>
         <artifactId>rpc-dependencies</artifactId>
         <version>1.0.0</version>
         <relativePath>../rpc-dependencies</relativePath>
@@ -18,7 +18,7 @@
     <dependencies>
 
         <dependency>
-            <groupId>ru.stm</groupId>
+            <groupId>ru.stm.rpc</groupId>
             <artifactId>rpc-core</artifactId>
             <version>${project.version}</version>
         </dependency>
