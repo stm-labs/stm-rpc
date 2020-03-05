@@ -1,0 +1,134 @@
+kind: pipeline
+name: STM-RPC
+
+steps:
+  - name: cache-restore
+    image: drillster/drone-volume-cache
+    volumes:
+      - name: cache
+        path: /cache
+    settings:
+      restore: true
+      mount:
+        - ./.m2
+
+  - name: build-rpc
+    image: docker.k8s-usn.stm.local:80/ci-platform:1.3_2
+#    pull: true
+    commands:
+      - chmod +x devops/build.sh && cd devops && ./build.sh
+    volumes:
+      - name: docker
+        path: /var/run
+    privileged: true
+    environment:
+      DOCKER_AUTH_CONFIG:
+        from_secret: docker_config_json
+      MAVEN_USERNAME:
+        from_secret: maven_username
+      MAVEN_PASSWORD:
+        from_secret: maven_password
+      GIT_READ_TOKEN:
+        from_secret: drone_git_token
+      K8S_KUBECTL_CONFIG_BASE64:
+        from_secret: drone_k8s_secret_kubectl_base64
+
+  - name: cache-update
+    image: drillster/drone-volume-cache
+    volumes:
+      - name: cache
+        path: /cache
+    err_ignore: true
+    settings:
+      rebuild: true
+      mount:
+        - ./.m2
+    when:
+      status:
+        - success
+        - failure
+
+  - name: cleanup-k8s
+    image: docker.k8s-usn.stm.local:80/ci-platform:1.3_2
+#    pull: true
+    err_ignore: true
+    environment:
+      K8S_KUBECTL_CONFIG_BASE64:
+        from_secret: drone_k8s_secret_kubectl_base64
+    commands:
+      - chmod +x devops/clean.sh && cd devops && ./clean.sh
+    when:
+      status:
+        - success
+        - failure
+
+  - name: notify
+    image: drillster/drone-email
+    settings:
+      host: smtp.yandex.ru
+      username: stm.usn@yandex.ru
+      password:
+        from_secret: drone_email_password
+      from: stm.usn@yandex.ru
+    when:
+      status:
+        - changed
+        - failure
+
+volumes:
+  - name: docker
+    host:
+      path: /var/run
+  - name: cache
+    host:
+      path: /opt/.m2-ci-cache
+
+---
+
+kind: secret
+name: docker_config_json
+get:
+  path: drone-docker-config
+  name: config
+
+---
+
+kind: secret
+name: drone_email_password
+get:
+  path: drone-email-password
+  name: password
+
+---
+
+kind: secret
+name: drone_git_token
+get:
+  path: drone-git-token
+  name: fulltoken
+
+---
+
+kind: secret
+name: drone_k8s_secret_kubectl_base64
+get:
+  path: drone-k8s-secret-kubectl
+  name: configbase64
+
+---
+
+kind: secret
+name: maven_username
+get:
+  path: maven-nexus
+  name: username
+
+---
+
+kind: secret
+name: maven_password
+get:
+  path: maven-nexus
+  name: password
+
+

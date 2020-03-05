@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>ru.stm</groupId>
+        <artifactId>rpc-dependencies</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../rpc-dependencies</relativePath>
+    </parent>
+
+    <artifactId>rpc-core</artifactId>
+    <name>Core RPC functionality</name>
+    <description>Core RPC interfaces and classes without concrete implementation</description>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>ru.stm</groupId>
+            <artifactId>platform-extension</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-core</artifactId>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-logging</artifactId>
+                    <groupId>commons-logging</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+    </dependencies>
+</project>
