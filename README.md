@@ -41,17 +41,7 @@ Please take a look on examples folder
 </repositories>
 .....    
 ```
- 
-**Build**
- 
- ```shell script
-mvn install
-```
- 
-**Deploy Maven Central Deploy**
-```shell script
-./deploy.sh
-```
+
 
 
 ----

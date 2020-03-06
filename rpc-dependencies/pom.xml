@@ -10,6 +10,62 @@
     <name>STM RPC bom</name>
     <description>STM RPC Dependency Management</description>
 
+
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git://github.com/stm-labs/stm-rpc</connection>
+        <developerConnection>scm:git:ssh://github.com:stm-labs/stm-rpc</developerConnection>
+        <url>https://github.com/stm-labs/stm-rpc</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>NBakaev</id>
+            <name>Nikita Bakaev</name>
+            <email>ya@nbakaev.ru</email>
+            <organization>STM Labs</organization>
+            <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
+        </developer>
+        <developer>
+            <id>abagiev</id>
+            <name>Alexander Bagiev</name>
+            <email>alexander.bagiev@stm-labs.ru</email>
+            <organization>STM Labs</organization>
+            <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
+        </developer>
+        <developer>
+            <id>korolkovad</id>
+            <name>Inna Korolkova</name>
+            <email>inna.korolkova@stm-labs.ru</email>
+            <organization>STM Labs</organization>
+            <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
+        </developer>
+        <developer>
+            <id>abondin</id>
+            <name>Alexander Bondin</name>
+            <email>ab@flexify.io</email>
+            <organization>STM Labs</organization>
+            <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
+        </developer>
+    </developers>
+
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+
+
     <properties>
         <java.version>1.8</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
