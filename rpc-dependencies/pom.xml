@@ -44,14 +44,14 @@
         <developer>
             <id>korolkovad</id>
             <name>Inna Korolkova</name>
-            <email>inna.korolkova@stm-labs.ru</email>
+            <email>innkorolkovad@gmail.com</email>
             <organization>STM Labs</organization>
             <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
         </developer>
         <developer>
             <id>abondin</id>
             <name>Alexander Bondin</name>
-            <email>ab@flexify.io</email>
+            <email>abondin@gmail.com</email>
             <organization>STM Labs</organization>
             <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
         </developer>
@@ -120,6 +120,23 @@
                         <id>attach-sources</id>
                         <goals>
                             <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <!-- TODO Organize all javadocs in code -->
+                    <failOnError>false</failOnError>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadoc</id>
+                        <goals>
+                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
