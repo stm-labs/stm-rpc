@@ -35,7 +35,7 @@ Please take a look on examples folder
 <dependency>
     <groupId>ru.stm-labs.rpc</groupId>
     <artifactId>rpc-kakfa-redis</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
 </dependency>
 .....
 <repositories>

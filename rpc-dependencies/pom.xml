@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>ru.stm-labs.rpc</groupId>
     <artifactId>rpc-dependencies</artifactId>
-    <version>1.0.0.RELEASE</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>STM RPC bom</name>
     <url>https://github.com/stm-labs/stm-rpc</url>
