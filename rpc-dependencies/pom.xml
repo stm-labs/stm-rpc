@@ -8,6 +8,7 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>STM RPC bom</name>
+    <url>https://github.com/stm-labs/stm-rpc</url>
     <description>STM RPC Dependency Management</description>
 
 
