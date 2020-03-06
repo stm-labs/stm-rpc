@@ -32,7 +32,6 @@ deploy core
 deploy rpc-kafka-redis
 deploy rpc-local-handler
 deploy rpc-router
-deploy example
 
 
 

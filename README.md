@@ -16,6 +16,18 @@ Please take a look on examples folder
  - rpc-local-handler
  - rpc-router
 
+---
+
+**Add dependency to your project** 
+
+```xml
+<dependency>
+    <groupId>ru.stm-labs.rpc</groupId>
+    <artifactId>rpc-kakfa-redis</artifactId>
+    <version>1.0.0.RELEASE</version>
+</dependency>
+```
+
 **Add snapshot dependency**
 
 ```xml
