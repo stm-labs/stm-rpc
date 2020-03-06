@@ -6,8 +6,8 @@
     <version>1.0.0-SNAPSHOT</version>
     <artifactId>rpc-platform</artifactId>
 
-    <name>STM RPC</name>
-    <description>RPC Framework</description>
+    <name>STM RPC Parent</name>
+    <description>RPC Framework Parent Pom</description>
     <packaging>pom</packaging>
 
     <modules>
