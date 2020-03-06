@@ -16,6 +16,31 @@ Please take a look on examples folder
  - rpc-local-handler
  - rpc-router
 
+**Add snapshot dependency**
+
+```xml
+.....
+<dependency>
+    <groupId>ru.stm-labs.rpc</groupId>
+    <artifactId>rpc-kakfa-redis</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+.....
+<repositories>
+    <repository>
+        <id>maven-snapshots</id>
+        <url>http://oss.sonatype.org/content/repositories/snapshots</url>
+        <layout>default</layout>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
+</repositories>
+.....    
+```
  
 **Build**
  
