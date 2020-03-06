@@ -5,9 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>ru.stm-labs.rpc</groupId>
     <artifactId>rpc-dependencies</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0.RELEASE</version>
     <packaging>pom</packaging>
     <name>STM RPC bom</name>
+    <url>https://github.com/stm-labs/stm-rpc</url>
     <description>STM RPC Dependency Management</description>
 
 
@@ -36,21 +37,21 @@
         <developer>
             <id>abagiev</id>
             <name>Alexander Bagiev</name>
-            <email>alexander.bagiev@stm-labs.ru</email>
+            <email>bagyev@mail.ru</email>
             <organization>STM Labs</organization>
             <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
         </developer>
         <developer>
             <id>korolkovad</id>
             <name>Inna Korolkova</name>
-            <email>inna.korolkova@stm-labs.ru</email>
+            <email>innkorolkovad@gmail.com</email>
             <organization>STM Labs</organization>
             <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
         </developer>
         <developer>
             <id>abondin</id>
             <name>Alexander Bondin</name>
-            <email>ab@flexify.io</email>
+            <email>abondin@gmail.com</email>
             <organization>STM Labs</organization>
             <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
         </developer>
@@ -119,6 +120,23 @@
                         <id>attach-sources</id>
                         <goals>
                             <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <!-- TODO Organize all javadocs in code -->
+                    <failOnError>false</failOnError>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadoc</id>
+                        <goals>
+                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
