@@ -54,11 +54,11 @@ echo $K8S_KUBECTL_CONFIG_BASE64 | base64 -d > /root/.kube/config
 
 helm init --client-only
 
-# GIT_READ_TOKEN - это токен для аутентификации в bitbucket
-# https://bitbucket.org/account/user/nbakaev_stm/app-passwords
-git clone https://github.com/stm-labs/helm-charts.git
 
-cd helm-charts
+export CHARTS_PATHS=helm-charts
+git clone https://github.com/stm-labs/$CHARTS_PATHS.git
+
+cd $CHARTS_PATHS
 
   if [ `git rev-parse --verify -q "origin/${DRONE_BRANCH}"` ]; then
     out "Checking out ${DRONE_BRANCH}"
@@ -100,7 +100,7 @@ helm install --name build-${NAMESPACE} \
     --set 'cp-helm-charts.cp-zookeeper.servers=1' \
     --wait \
     --atomic \
-    ./charts/rpc-kafka-redis
+    ./$CHARTS_PATHS/rpc-kafka-redis
 
 out "Everything is Deployed"
 
