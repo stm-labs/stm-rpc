@@ -121,14 +121,10 @@ if [[ "${status}" == 0 ]];then
    -DactTransitively=false  \
    -DreResolve=false
 
-  mvnp org.apache.maven.plugins:maven-dependency-plugin:2.4:get \
-    -Dartifact=ru.stm-labs.rpc:rpc-dependencies:1.0.1-SNAPSHOT:pom \
-    -DremoteRepositories=usn-snapshots::::$MVN_REPO_PATH
-
-  mvnp org.apache.maven.plugins:maven-dependency-plugin:3.1.1:purge-local-repository \
-   -DmanualInclude=ru.stm:platform-standard-library  \
-   -DactTransitively=false  \
-   -DreResolve=false
+# TODO: load stm parent
+#  mvnp org.apache.maven.plugins:maven-dependency-plugin:2.4:get \
+#    -Dartifact=ru.stm-labs.rpc:rpc-dependencies:1.0.1-SNAPSHOT:pom \
+#    -DremoteRepositories=usn-snapshots::::$MVN_REPO_PATH
 
   echo "Building project with maven"
 
