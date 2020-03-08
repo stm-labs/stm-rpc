@@ -132,6 +132,7 @@ if [[ "${status}" == 0 ]];then
 
   echo "Building project with maven"
 
+  cd $HOME_FOLDER/rpc-dependencies && mvnp install
   cd $HOME_FOLDER/core && mvnp install
   cd $HOME_FOLDER/rpc-kafka-redis && mvnp install
   cd $HOME_FOLDER/rpc-router && mvnp install
@@ -158,6 +159,7 @@ if [[ "${status}" == 0 ]];then
   if [[ "${DRONE_BRANCH}" == "master" ]];then
         # если мы на мастер то делаем deploy
         echo "On master branch - deploy  all RPC libs"
+        cd $HOME_FOLDER/rpc-dependencies && mvnp deploy
         cd $HOME_FOLDER/core && mvnp deploy
         cd $HOME_FOLDER/rpc-kafka-redis && mvnp deploy
         cd $HOME_FOLDER/rpc-router && mvnp deploy
