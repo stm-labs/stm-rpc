@@ -58,7 +58,7 @@ helm init --client-only
 # https://bitbucket.org/account/user/nbakaev_stm/app-passwords
 git clone https://github.com/stm-labs/helm-charts.git
 
-cd charts
+cd helm-charts
 
   if [ `git rev-parse --verify -q "origin/${DRONE_BRANCH}"` ]; then
     out "Checking out ${DRONE_BRANCH}"
