@@ -64,7 +64,7 @@ steps:
         - failure
 
   - name: notify
-    image: drillster/drone-email
+    image: docker.k8s-usn.stm.local:80/drone-email:1.0
     settings:
       host: smtp.yandex.ru
       username: stm.usn@yandex.ru

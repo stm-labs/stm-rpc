@@ -16,7 +16,7 @@ cd ../
 HOME_FOLDER=`pwd`
 
 MVN_PARAMS='-s /root/maven_settings.xml -B'
-export NAMESPACE=cibuild${DRONE_REPO/stm_usn\//-}-${DRONE_BUILD_NUMBER}
+export NAMESPACE=cibuild${DRONE_REPO/stm-labs\//-}-${DRONE_BUILD_NUMBER}
 export MAVEN_HOME=`pwd`/.m2
 export M2_HOME_PATH=$MAVEN_HOME
 export MVN_REPO_PATH=http://nexus.k8s-usn.stm.local/repository/maven-snapshots/
@@ -56,7 +56,7 @@ helm init --client-only
 
 # GIT_READ_TOKEN - это токен для аутентификации в bitbucket
 # https://bitbucket.org/account/user/nbakaev_stm/app-passwords
-git clone https://${GIT_READ_TOKEN}@bitbucket.org/stm_usn/charts.git
+git clone https://github.com/stm-labs/helm-charts.git
 
 cd charts
 
@@ -77,10 +77,8 @@ kubectl create namespace ${NAMESPACE}
 # добавляем в rancher проект "CI Build" все что связано с автотестами
 kubectl annotate namespace ${NAMESPACE} field.cattle.io/projectId=c-mgjq7:p-8zrvm
 
-# TODO: почему-то разворачивается HA Redis / Kafka
 helm install --name build-${NAMESPACE} \
     --namespace ${NAMESPACE} \
-    --set postgresql.enabled=false \
     --set 'redis.usePassword=false' \
     --set 'redis.cluster.enabled=false' \
     --set 'redis.sentinel.enabled=false' \
@@ -102,7 +100,7 @@ helm install --name build-${NAMESPACE} \
     --set 'cp-helm-charts.cp-zookeeper.servers=1' \
     --wait \
     --atomic \
-    ./charts/platform-components
+    ./charts/rpc-kafka-redis
 
 out "Everything is Deployed"
 
@@ -119,22 +117,18 @@ if [[ "${status}" == 0 ]];then
   cd /
 
   mvnp org.apache.maven.plugins:maven-dependency-plugin:3.1.1:purge-local-repository \
-   -DmanualInclude=ru.stm:platform-parent  \
+   -DmanualInclude=ru.stm-labs.rpc  \
    -DactTransitively=false  \
    -DreResolve=false
 
   mvnp org.apache.maven.plugins:maven-dependency-plugin:2.4:get \
-    -Dartifact=ru.stm:platform-parent:1.0.0-SNAPSHOT:pom \
+    -Dartifact=ru.stm-labs.rpc:rpc-dependencies:1.0.1-SNAPSHOT:pom \
     -DremoteRepositories=usn-snapshots::::$MVN_REPO_PATH
 
   mvnp org.apache.maven.plugins:maven-dependency-plugin:3.1.1:purge-local-repository \
    -DmanualInclude=ru.stm:platform-standard-library  \
    -DactTransitively=false  \
    -DreResolve=false
-
-  mvnp org.apache.maven.plugins:maven-dependency-plugin:2.4:get \
-    -Dartifact=ru.stm:platform-standard-library:1.0.0-SNAPSHOT:jar \
-    -DremoteRepositories=usn-snapshots::::$MVN_REPO_PATH
 
   echo "Building project with maven"
 
