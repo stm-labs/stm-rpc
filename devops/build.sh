@@ -16,7 +16,7 @@ cd ../
 HOME_FOLDER=`pwd`
 
 MVN_PARAMS='-s /root/maven_settings.xml -B'
-export NAMESPACE=cibuild${DRONE_REPO/stm_usn\//-}-${DRONE_BUILD_NUMBER}
+export NAMESPACE=cibuild${DRONE_REPO/stm-labs\//-}-${DRONE_BUILD_NUMBER}
 export MAVEN_HOME=`pwd`/.m2
 export M2_HOME_PATH=$MAVEN_HOME
 export MVN_REPO_PATH=http://nexus.k8s-usn.stm.local/repository/maven-snapshots/
@@ -54,11 +54,11 @@ echo $K8S_KUBECTL_CONFIG_BASE64 | base64 -d > /root/.kube/config
 
 helm init --client-only
 
-# GIT_READ_TOKEN - это токен для аутентификации в bitbucket
-# https://bitbucket.org/account/user/nbakaev_stm/app-passwords
-git clone https://${GIT_READ_TOKEN}@bitbucket.org/stm_usn/charts.git
 
-cd charts
+export CHARTS_PATHS=helm-charts
+git clone https://github.com/stm-labs/$CHARTS_PATHS.git
+
+cd $CHARTS_PATHS
 
   if [ `git rev-parse --verify -q "origin/${DRONE_BRANCH}"` ]; then
     out "Checking out ${DRONE_BRANCH}"
@@ -77,10 +77,8 @@ kubectl create namespace ${NAMESPACE}
 # добавляем в rancher проект "CI Build" все что связано с автотестами
 kubectl annotate namespace ${NAMESPACE} field.cattle.io/projectId=c-mgjq7:p-8zrvm
 
-# TODO: почему-то разворачивается HA Redis / Kafka
 helm install --name build-${NAMESPACE} \
     --namespace ${NAMESPACE} \
-    --set postgresql.enabled=false \
     --set 'redis.usePassword=false' \
     --set 'redis.cluster.enabled=false' \
     --set 'redis.sentinel.enabled=false' \
@@ -102,7 +100,7 @@ helm install --name build-${NAMESPACE} \
     --set 'cp-helm-charts.cp-zookeeper.servers=1' \
     --wait \
     --atomic \
-    ./charts/platform-components
+    ./$CHARTS_PATHS/rpc-kafka-redis
 
 out "Everything is Deployed"
 
@@ -119,25 +117,18 @@ if [[ "${status}" == 0 ]];then
   cd /
 
   mvnp org.apache.maven.plugins:maven-dependency-plugin:3.1.1:purge-local-repository \
-   -DmanualInclude=ru.stm:platform-parent  \
+   -DmanualInclude=ru.stm-labs.rpc  \
    -DactTransitively=false  \
    -DreResolve=false
 
-  mvnp org.apache.maven.plugins:maven-dependency-plugin:2.4:get \
-    -Dartifact=ru.stm:platform-parent:1.0.0-SNAPSHOT:pom \
-    -DremoteRepositories=usn-snapshots::::$MVN_REPO_PATH
-
-  mvnp org.apache.maven.plugins:maven-dependency-plugin:3.1.1:purge-local-repository \
-   -DmanualInclude=ru.stm:platform-standard-library  \
-   -DactTransitively=false  \
-   -DreResolve=false
-
-  mvnp org.apache.maven.plugins:maven-dependency-plugin:2.4:get \
-    -Dartifact=ru.stm:platform-standard-library:1.0.0-SNAPSHOT:jar \
-    -DremoteRepositories=usn-snapshots::::$MVN_REPO_PATH
+# TODO: load stm parent
+#  mvnp org.apache.maven.plugins:maven-dependency-plugin:2.4:get \
+#    -Dartifact=ru.stm-labs.rpc:rpc-dependencies:1.0.1-SNAPSHOT:pom \
+#    -DremoteRepositories=usn-snapshots::::$MVN_REPO_PATH
 
   echo "Building project with maven"
 
+  cd $HOME_FOLDER/rpc-dependencies && mvnp install
   cd $HOME_FOLDER/core && mvnp install
   cd $HOME_FOLDER/rpc-kafka-redis && mvnp install
   cd $HOME_FOLDER/rpc-router && mvnp install
@@ -164,6 +155,7 @@ if [[ "${status}" == 0 ]];then
   if [[ "${DRONE_BRANCH}" == "master" ]];then
         # если мы на мастер то делаем deploy
         echo "On master branch - deploy  all RPC libs"
+        cd $HOME_FOLDER/rpc-dependencies && mvnp deploy
         cd $HOME_FOLDER/core && mvnp deploy
         cd $HOME_FOLDER/rpc-kafka-redis && mvnp deploy
         cd $HOME_FOLDER/rpc-router && mvnp deploy
