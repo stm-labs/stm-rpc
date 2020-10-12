@@ -7,6 +7,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 import ru.stm.platform.BusinessError;
 import ru.stm.rpc.core.Rpc;
@@ -29,20 +30,28 @@ import java.util.stream.Collectors;
 @Slf4j
 public class LocalHandlerRpcService<E extends RpcCtx> implements BeanPostProcessor, RpcServiceRoute<E> {
     // TODO: use method reference
-    private HashMap<String, RpcCallContainer> handlers = new HashMap<>();
+    private final HashMap<String, RpcCallContainer> handlers = new HashMap<>();
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         boolean annotationPresent = bean.getClass().isAnnotationPresent(Rpc.class);
         if (annotationPresent) {
             String topic = bean.getClass().getAnnotation(Rpc.class).topic();
+
+            String namespace = bean.getClass().getAnnotation(Rpc.class).namespace();
+
+            // convert empty String to null
+            if (StringUtils.isEmpty(namespace)) {
+                namespace = null;
+            }
+
             log.info("Found Rpc {}", topic);
 
             List<Method> methods = Arrays.stream(bean.getClass().getMethods())
                     .filter(x -> AnnotationUtils.findAnnotation(x, RpcHandler.class) != null).collect(Collectors.toList());
             for (Method method : methods) {
                 Class type = (Class) method.getParameters()[0].getParameterizedType();
-                handlers.put(getKey(type, topic), new RpcCallContainer(method, bean));
+                handlers.put(getKey(type, topic, namespace), new RpcCallContainer(method, bean));
             }
         }
 
@@ -60,15 +69,30 @@ public class LocalHandlerRpcService<E extends RpcCtx> implements BeanPostProcess
     }
 
     @Override
-    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(E context, N request, String namespace, Class<T> result) {
-        return call(context, request, namespace, null, result);
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, String namespace, Class<T> result) {
+        return call(null, request, topic, namespace, null, result);
     }
 
     @Override
-    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(E context, N request, String namespace, Long timeout, Class<T> result) {
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, String namespace, long timeout, Class<T> result) {
+        return call(null, request, topic, namespace, timeout, result);
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(E context, N request, String topic, Class<T> result) {
+        return call(context, request, topic, null, null, result);
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(E context, N request, String topic, Long timeout, Class<T> result) {
+        return call(context, request, topic, null, timeout, result);
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(E context, N request, String topic, String namespace, Long timeout, Class<T> result) {
         return Mono.create(f -> {
             String operationId = UUID.randomUUID().toString();
-            String key = getKey(request, namespace);
+            String key = getKey(request, topic, namespace);
 
             RpcCallContainer container = handlers.get(key);
             if (container != null) {
@@ -100,6 +124,11 @@ public class LocalHandlerRpcService<E extends RpcCtx> implements BeanPostProcess
     }
 
     @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(E context, N request, String topic, String namespace, Class<T> result) {
+        return call(context, request, topic, namespace, null, result);
+    }
+
+    @Override
     public String getName() {
         return "LOCAL_HANDLER";
     }
@@ -117,12 +146,12 @@ public class LocalHandlerRpcService<E extends RpcCtx> implements BeanPostProcess
         return (Mono<T>) container.method.invoke(container.obj, request, context);
     }
 
-    private <N extends RpcRequest> String getKey(N request, String namespace) {
-        return namespace + "###" + request.getClass().getName();
+    private <N extends RpcRequest> String getKey(N request, String topic, String namespace) {
+        return topic + "###" +namespace + "###" + request.getClass().getName();
     }
 
-    private String getKey(Class<?> request, String namespace) {
-        return namespace + "###" + request.getName();
+    private String getKey(Class<?> request, String topic, String namespace) {
+        return topic + "###" + namespace + "###" + request.getName();
     }
 
     @Data

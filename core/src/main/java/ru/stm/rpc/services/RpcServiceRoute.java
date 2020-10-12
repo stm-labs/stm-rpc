@@ -25,6 +25,15 @@ public interface RpcServiceRoute<M extends RpcCtx> {
     <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic,
                                                                                           Class<T> result);
 
+    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic,
+                                                                                          String namespace,
+                                                                                          Class<T> result);
+
+    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic,
+                                                                                          String namespace,
+                                                                                          long timeout,
+                                                                                          Class<T> result);
+
     /**
      * Call RPC into specific namespace
      *
@@ -50,11 +59,21 @@ public interface RpcServiceRoute<M extends RpcCtx> {
     <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(M context, N request, String topic,
                                                                             Long timeout, Class<T> result);
 
+    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(M context, N request, String topic,
+                                                                            String namespace, Long timeout,
+                                                                            Class<T> result);
+
+    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(M context, N request, String topic,
+                                                                            String namespace, Class<T> result);
+
     /**
      * @return RPC Route name
      */
     String getName();
 
+    /**
+     * @return namespace. Empty if Route support any namespace
+     */
     String getNamespace();
 
 }

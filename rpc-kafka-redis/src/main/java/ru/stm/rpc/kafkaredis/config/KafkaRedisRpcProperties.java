@@ -32,6 +32,8 @@ public class KafkaRedisRpcProperties {
         private RedisConfiguration redis;
         private KafkaRedisProducer producer;
         private KafkaRedisConsumer consumer;
+
+        private int loggingThreshold = 50000;
     }
 
     /**

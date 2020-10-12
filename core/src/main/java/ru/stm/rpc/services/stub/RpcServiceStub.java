@@ -24,6 +24,16 @@ public class RpcServiceStub implements RpcService<RpcStubCtx> {
     }
 
     @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, String namespace, Class<T> result) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, String namespace, long timeout, Class<T> result) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(RpcStubCtx context, N request, Class<T> result) {
         throw new UnsupportedOperationException();
     }
@@ -35,6 +45,16 @@ public class RpcServiceStub implements RpcService<RpcStubCtx> {
 
     @Override
     public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(RpcStubCtx context, N request, String topic, Long timeout, Class<T> result) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(RpcStubCtx context, N request, String topic, String namespace, Long timeout, Class<T> result) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(RpcStubCtx context, N request, String topic, String namespace, Class<T> result) {
         throw new UnsupportedOperationException();
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
+import org.springframework.util.Assert;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -52,7 +53,6 @@ import static ru.stm.rpc.kafkaredis.topic.InternalKafkaRpcConstants.KAFKA_GLOBAL
 public class KafkaRedisRPCProducer extends AbstractHealthIndicator implements RpcServiceRoute<RpcCtx>, ApplicationListener<ContextRefreshedEvent> {
 
     private static final String RPC_REDIS_POLLING = "RPC-Redis-Polling-";
-    private final static int STATS_CURRENT_RPC_THRESHOLD = 1500;
 
     private final KafkaTemplate kafkaTemplate;
     private final ReactiveRedisTemplate<String, ?> reactiveRedisTemplate;
@@ -92,6 +92,7 @@ public class KafkaRedisRPCProducer extends AbstractHealthIndicator implements Rp
     private final Set<String> finalizerRedisDelete = new CopyOnWriteArraySet<>();
 
     public KafkaRedisRPCProducer(KafkaRpcConnection connection, MeterRegistry meterRegistry) {
+        Assert.notNull(connection.getNamespace(), "Null namespace");
 
         this.kafkaTemplate = connection.getKafkaTemplate();
         this.reactiveRedisTemplate = connection.getRedisTemplate();
@@ -187,7 +188,7 @@ public class KafkaRedisRPCProducer extends AbstractHealthIndicator implements Rp
                     toDelete.forEach(currentRpc::remove);
 
                     int currentRpcSize = currentRpc.keySet().size();
-                    if (currentRpcSize > STATS_CURRENT_RPC_THRESHOLD) {
+                    if (currentRpcSize > props.getLoggingThreshold()) {
                         log.warn("CurrentRpc {} is larger than STATS_CURRENT_RPC_THRESHOLD", currentRpcSize);
                     }
 
@@ -217,7 +218,7 @@ public class KafkaRedisRPCProducer extends AbstractHealthIndicator implements Rp
 
                     Thread.sleep(cleanerFinalizerInterval);
                 } catch (Exception e) {
-                    log.error("Error in finalizer RPC Redis Thread {}", e);
+                    log.error("Error in finalizer RPC Redis Thread {}", namespace, e);
                 }
             }
         });
@@ -343,10 +344,14 @@ public class KafkaRedisRPCProducer extends AbstractHealthIndicator implements Rp
                             String key = keys.get(i);
 
                             RpcState state = currentRpc.get(key);
-                            state.setStatus(RpcStatus.TO_PROCESS_QUEUE);
-                            rpcResultExecutorPool.execute(() -> {
-                                processResponse(key, state, response);
-                            });
+                            if (state != null) {
+                                state.setStatus(RpcStatus.TO_PROCESS_QUEUE);
+                                rpcResultExecutorPool.execute(() -> {
+                                    processResponse(key, state, response);
+                                });
+                            } else {
+                                log.warn("Lost RPC key={}. Is it cancelled by timeout??", key);
+                            }
                         }
                     }
 
@@ -360,7 +365,7 @@ public class KafkaRedisRPCProducer extends AbstractHealthIndicator implements Rp
         });
         redisThread.setName(RPC_REDIS_POLLING + namespace);
         redisThread.setUncaughtExceptionHandler((t, e) -> {
-            log.error("Failed in thread {}", RPC_REDIS_POLLING, e);
+            log.error("Failed in thread {}", RPC_REDIS_POLLING + namespace, e);
             // TODO:
             // ApplicationUtils.forceExitError();
         });
@@ -479,6 +484,26 @@ public class KafkaRedisRPCProducer extends AbstractHealthIndicator implements Rp
                 return new RpcTimeoutException(uid, traceId, requestType, e.getMessage());
             });
         });
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(RpcCtx context, N request, String topic, String namespace, Long timeout, Class<T> result) {
+        return call(context, request, topic, timeout, result);
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(RpcCtx context, N request, String topic, String namespace, Class<T> result) {
+        return call(context, request, topic, result);
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, String namespace, Class<T> result) {
+        return call(null, request, topic, result);
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, String namespace, long timeout, Class<T> result) {
+        return call(null, request, topic, result);
     }
 
     @Override
