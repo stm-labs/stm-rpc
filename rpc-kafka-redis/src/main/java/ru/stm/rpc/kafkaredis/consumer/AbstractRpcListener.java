@@ -121,7 +121,7 @@ abstract class AbstractRpcListener implements ApplicationListener {
             }
         });
         statisticsThread.start();
-        statisticsThread.setName("Rpc-Consumer-Stats");
+        statisticsThread.setName("RPC-Consumer-Stats-" + connection.getNamespace());
     }
 
     private String mapRpcStatusToMetricName(RpcConsumerStatus status) {

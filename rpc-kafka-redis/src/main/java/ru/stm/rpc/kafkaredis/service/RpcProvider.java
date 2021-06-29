@@ -14,17 +14,19 @@ import ru.stm.rpc.types.RpcResultType;
 public class RpcProvider {
     private final ApplicationContext ctx;
     private final String topic;
+    private final String namespace;
     private final KafkaTemplate kafka;
     private RpcService rpc;
 
-    public RpcProvider(ApplicationContext ctx, String topic, KafkaTemplate kafka) {
+    public RpcProvider(ApplicationContext ctx, String topic, String namespace, KafkaTemplate kafka) {
         this.ctx = ctx;
         this.topic = topic;
+        this.namespace = namespace;
         this.kafka = kafka;
     }
 
     public <T extends RpcRequest, R extends RpcResultType> Mono<R> call(RpcCtx ctx, T req, Class<R> rspClass) {
-        return rpc().call(ctx, req, topic, rspClass).flatMap(x -> {
+        return rpc().call(ctx, req, topic, namespace, rspClass).flatMap(x -> {
             if (x.isOk()) {
                 return Mono.just(x.getData());
             }
@@ -33,7 +35,7 @@ public class RpcProvider {
     }
 
     public <T extends RpcRequest, R extends RpcResultType> Mono<R> call(T req, Class<R> rspClass) {
-        return rpc().callWithoutContext(req, topic, rspClass).flatMap(x -> {
+        return rpc().callWithoutContext(req, topic, namespace, rspClass).flatMap(x -> {
             if (x.isOk()) {
                 return Mono.just(x.getData());
             }

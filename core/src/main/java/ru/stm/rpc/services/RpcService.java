@@ -21,11 +21,13 @@ public interface RpcService<M extends RpcCtx> {
      */
     <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, Class<T> result);
 
-    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic,
-                                                                                          long timeout, Class<T> result);
+    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, Class<T> result);
 
-    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic,
-                                                                                          Class<T> result);
+    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, long timeout, Class<T> result);
+
+    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, String namespace, Class<T> result);
+
+    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, String namespace, long timeout, Class<T> result);
 
     /**
      * Call RPC with user context
@@ -60,4 +62,7 @@ public interface RpcService<M extends RpcCtx> {
      */
     <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(M context, N request, String topic, Long timeout, Class<T> result);
 
+    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(M context, N request, String topic, String namespace, Long timeout, Class<T> result);
+
+    <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(M context, N request, String topic, String namespace, Class<T> result);
 }

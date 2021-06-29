@@ -95,7 +95,7 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
 
                     /* Add RpcProvider with topic and producer inside */
                     def.getConstructorArgumentValues().addGenericArgumentValue(
-                            new RpcProvider(appCtx, remoteService.topic(),
+                            new RpcProvider(appCtx, remoteService.topic(), remoteService.namespace(),
                                     holder.getProducer(remoteService.namespace())));
                 } else {
                     log.trace("Skipping Remote Service: {}, namespaces = {}, topic = {}",

@@ -45,6 +45,13 @@ public class RpcResponseService {
      * @param throwable
      */
     void sendExceptionally(Object payload, String key, String traceId, String operationName, Throwable throwable, String namespace, Duration timeout) {
+        if (timeout.isNegative()) {
+            logger.error("Negative timeout for operation. Skip send response  operationId={} traceId={} operationName={} payload={}", key, traceId, operationName, payload, throwable);
+            this.meterRegistry.counter("rpc_send_exceptionally", "RPC", "Consumer",
+                    "outcome", "error", "namespace", namespace, "operation_name", operationName, "component", "immediate_timeout").increment();
+            return;
+        }
+
         logger.error("Send error to operationId={} traceId={} operationName={} payload={}", key, traceId, operationName, payload, throwable);
 
         RpcResult rpcResult = RpcResult.errorInternal(key, throwable);

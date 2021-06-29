@@ -72,7 +72,6 @@ public class RpcNamespace {
     private void verify() {
         if (hasConsumer()) {
             KafkaConsumerConfiguration kafka = props.getConsumer().getKafka();
-            log.info(">>>>>>>>>>>>>>>>> Bootstrap: {}", kafka.getBootstrapServers());
             if (kafka == null || StringUtils.isBlank(kafka.getBootstrapServers())) {
                 throw new IllegalArgumentException(String.format("Consumer for namespace %s was set but Kafka Bootstrap Servers has not been setup", name));
             }

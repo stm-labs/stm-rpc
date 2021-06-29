@@ -9,7 +9,7 @@ import ru.stm.rpc.types.RpcResultType;
 @AllArgsConstructor(staticName = "of")
 @NoArgsConstructor
 @ToString
-public class TestGetUserResponse implements RpcResultType {
+public class TestSaveUserResponse implements RpcResultType {
 
     private User user;
 }

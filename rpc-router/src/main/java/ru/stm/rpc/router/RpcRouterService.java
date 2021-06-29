@@ -39,13 +39,23 @@ public class RpcRouterService<E extends RpcCtx> implements RpcService<E> {
     }
 
     @Override
-    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String namespace, long timeout, Class<T> result) {
-        return call(null, request, namespace, timeout, result);
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, Class<T> result) {
+        return call(null, request, topic, result);
     }
 
     @Override
-    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String namespace, Class<T> result) {
-        return call(null, request, namespace, result);
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, String namespace, Class<T> result) {
+        return call(null, request, topic, namespace, null, result);
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, String namespace, long timeout, Class<T> result) {
+        return call(null, request, topic, namespace, timeout, result);
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, long timeout, Class<T> result) {
+        return call(null, request, topic, timeout, result);
     }
 
     @Override
@@ -54,12 +64,17 @@ public class RpcRouterService<E extends RpcCtx> implements RpcService<E> {
     }
 
     @Override
-    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(E context, N request, String namespace, Class<T> result) {
-        return call(context, request, namespace, null, result);
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(E context, N request, String topic, Class<T> result) {
+        return call(context, request, topic, null, null, result);
     }
 
     @Override
     public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(E context, N request, String topic, Long timeout, Class<T> result) {
+        return call(context, request, topic, null, null, result);
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(E context, N request, String topic, String namespace, Long timeout, Class<T> result) {
         RpcRouterProperties.RpcRouterRoute rpcTopicInfo = null;
 
         if (rpcRouterProperties.getRoute() != null) {
@@ -70,16 +85,24 @@ public class RpcRouterService<E extends RpcCtx> implements RpcService<E> {
 
         if (rpcTopicInfo == null) {
             String defDestination = rpcRouterProperties.getDef().getDestination();
-            String defNamespace = rpcRouterProperties.getDef().getNamespace();
+
+            String realNamespace;
+
+            if (!StringUtils.isEmpty(namespace)) {
+                realNamespace = namespace;
+            } else {
+                realNamespace = rpcRouterProperties.getDef().getNamespace();
+            }
+
             if (StringUtils.isEmpty(defDestination)) {
                 throw new RuntimeException(String.format("Empty default destination for topic %s", topic));
             }
 
-            if (StringUtils.isEmpty(defNamespace)) {
+            if (StringUtils.isEmpty(realNamespace)) {
                 throw new RuntimeException(String.format("Empty default namespace for topic %s", topic));
             }
 
-            rpcServiceRoute = routes.get(getTokenForDestination(defDestination, defNamespace));
+            rpcServiceRoute = routes.get(getTokenForDestination(defDestination, realNamespace));
         } else {
             rpcServiceRoute = routes.get(getTokenForDestination(rpcTopicInfo.getDestination(), rpcTopicInfo.getNamespace()));
         }
@@ -94,6 +117,11 @@ public class RpcRouterService<E extends RpcCtx> implements RpcService<E> {
             return rpcServiceRoute.call(context, request, topic, timeout, result);
         }
 
+    }
+
+    @Override
+    public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> call(E context, N request, String topic, String namespace, Class<T> result) {
+        return call(context, request, topic, namespace, null, result);
     }
 
     private String getTokenForDestination(String destination, String namespace) {

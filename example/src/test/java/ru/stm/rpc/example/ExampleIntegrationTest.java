@@ -3,13 +3,8 @@ package ru.stm.rpc.example;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import ru.stm.rpc.core.NoDefRpcCtx;
-import ru.stm.rpc.core.RpcResult;
 import ru.stm.rpc.example.api.User;
-import ru.stm.rpc.example.api.rpc.TestGetUserRequest;
-import ru.stm.rpc.example.api.rpc.TestGetUserResponse;
-import ru.stm.rpc.example.api.rpc.TestSaveUserRequest;
-import ru.stm.rpc.services.RpcService;
+import ru.stm.rpc.example.api.rpc.*;
 
 public class ExampleIntegrationTest extends AbstractIntegrationTest {
 
@@ -18,9 +13,7 @@ public class ExampleIntegrationTest extends AbstractIntegrationTest {
     private static final Long TEST_ID = 1L;
 
     @Autowired
-    private RpcService<NoDefRpcCtx> rpcService;
-
-    private NoDefRpcCtx appContext = new NoDefRpcCtx();
+    private RpcUserService rpcUserService;
 
     @Test
     public void initializeContextTest() {
@@ -29,36 +22,30 @@ public class ExampleIntegrationTest extends AbstractIntegrationTest {
     @Test
     public void getExampleUserTest() {
 
-        TestGetUserRequest request = new TestGetUserRequest();
-        request.setUserName(S_TEST_NAME);
+        TestGetUserResponse result = rpcUserService.getUserByName(TestGetUserRequest.of(S_TEST_NAME)).block();
 
-        RpcResult<TestGetUserResponse> result = rpcService.call(appContext, request, TestGetUserResponse.class).block();
+        Assert.assertNotNull(result);
 
-        assertResult(result);
+        assertResultUser(result.getUser());
     }
 
     @Test
     public void saveExampleUserTest() {
 
-        TestSaveUserRequest request = new TestSaveUserRequest();
         User user = new User();
         user.setName(S_TEST_NAME);
         user.setEmail(S_TEST_EMAIL);
-        request.setUser(user);
 
-        RpcResult<TestGetUserResponse> result = rpcService.call(appContext, request, TestGetUserResponse.class).block();
-
-        assertResult(result);
-    }
-
-    private void assertResult(RpcResult<TestGetUserResponse> result) {
+        TestSaveUserResponse result = rpcUserService.saveUser(TestSaveUserRequest.of(user)).block();
 
         Assert.assertNotNull(result);
 
-        TestGetUserResponse testGetUserResponse = result.getData();
-        Assert.assertNotNull(testGetUserResponse);
+        assertResultUser(result.getUser());
+    }
 
-        User resultUser = testGetUserResponse.getUser();
+    private void assertResultUser(User resultUser) {
+
+        Assert.assertNotNull(resultUser);
         Assert.assertEquals(S_TEST_NAME, resultUser.getName());
         Assert.assertEquals(S_TEST_EMAIL, resultUser.getEmail());
         Assert.assertEquals(TEST_ID, resultUser.getId());
