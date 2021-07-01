@@ -458,6 +458,10 @@ public class KafkaRedisRPCProducer extends AbstractHealthIndicator implements Rp
 
                 producerRecord.headers().add(RpcContext.TRACE_ID, traceId.getBytes());
 
+                if (log.isTraceEnabled()) {
+                    log.trace("Send RPC request to namespace={} topic={} traceId={} request={} ctx={}", namespace, topic, traceId, request, context);
+                }
+                
                 kafkaTemplate.send(producerRecord).addCallback(new ListenableFutureCallback() {
                     @Override
                     public void onFailure(Throwable throwable) {

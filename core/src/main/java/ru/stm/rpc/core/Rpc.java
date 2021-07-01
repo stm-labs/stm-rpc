@@ -14,4 +14,6 @@ public @interface Rpc {
     String namespace() default "";
 
     boolean transactional() default false;
+    
+    boolean useSpelForTopic() default false;
 }

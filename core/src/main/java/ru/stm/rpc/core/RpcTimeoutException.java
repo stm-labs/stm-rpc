@@ -1,5 +1,10 @@
 package ru.stm.rpc.core;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@EqualsAndHashCode(callSuper = true)
+@Data
 public class RpcTimeoutException extends RuntimeException {
 
     private final String operationId;

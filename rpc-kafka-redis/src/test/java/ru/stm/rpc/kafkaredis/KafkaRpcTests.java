@@ -3,16 +3,16 @@ package ru.stm.rpc.kafkaredis;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.IfProfileValue;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+
+import ru.stm.rpc.core.Rpc;
+import ru.stm.rpc.kafkaredis.beanregistry.RpcTopicParser;
 import ru.stm.rpc.kafkaredis.config.KafkaRedisRpcProperties;
 import ru.stm.rpc.kafkaredis.topic.KafkaTopicState;
 
@@ -22,11 +22,11 @@ import java.util.stream.Collectors;
 
 import static ru.stm.rpc.kafkaredis.topic.KafkaEnsureTopicHelper.handleTopics;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = KafkaRpcTests.class)
+@SpringBootTest(classes = {KafkaRpcTests.class, RpcTopicParser.class})
 @Slf4j
-@ContextConfiguration(classes = KafkaRpcTests.Config.class)
+@EnableConfigurationProperties(value = {KafkaRedisRpcProperties.class})
 @IfProfileValue(name = "test-profile", values = {"IntegrationTest", "ciTest"})
+@Configuration
 public class KafkaRpcTests {
 
     private final static String NAMESPACE_DMZ = "dmz";
@@ -36,14 +36,7 @@ public class KafkaRpcTests {
     private static final String KAFKA_TOPIC_GP3DOCS = "KAFKA_TOPIC_GP3DOCS";
 
     @Autowired
-    KafkaRedisRpcProperties rpcProps;
-
-    @Import({KafkaRedisRpcProperties.class})
-    @EnableConfigurationProperties
-    @Configuration
-    public static class Config {
-
-    }
+    private KafkaRedisRpcProperties rpcProps;
 
     private volatile boolean allPrepared;
 
@@ -54,10 +47,33 @@ public class KafkaRpcTests {
         log.error("Uncaught exception", ex);
     };
 
+    @Autowired
+    RpcTopicParser rpcTopicParser;
+
+    @Test
+    public void testNotSpellTopic() {
+        String parse = rpcTopicParser.parse(TestNotSpellAnnotation.class.getAnnotation(Rpc.class));
+        Assertions.assertEquals("test", parse);
+    }
+
+    @Test
+    public void testNotSpellTopic2() {
+        String parse = rpcTopicParser.parse(TestNotSpellAnnotation2.class.getAnnotation(Rpc.class));
+        Assertions.assertEquals("#{systemEnvironment['HOME']}", parse);
+    }
+
+    @Test
+    public void TestSpellAnnotation() {
+        String parse = rpcTopicParser.parse(TestSpellAnnotation.class.getAnnotation(Rpc.class));
+        Assertions.assertEquals("param", parse);
+    }
+    
     // verify that we can handle concurrent topic creating properly
     @Test
     public void checkConcurrentTopicCreation() throws InterruptedException {
 
+        log.info("Got={}", rpcProps);
+        
         Runnable runnable = () -> {
 
             Map<String, Object> configs = new HashMap<>();

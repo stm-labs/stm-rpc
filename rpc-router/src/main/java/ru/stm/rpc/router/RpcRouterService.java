@@ -50,7 +50,7 @@ public class RpcRouterService<E extends RpcCtx> implements RpcService<E> {
 
     @Override
     public <T extends RpcResultType, N extends RpcRequest> Mono<RpcResult<T>> callWithoutContext(N request, String topic, String namespace, long timeout, Class<T> result) {
-        return call(null, request, topic, namespace, timeout, result);
+        return null;
     }
 
     @Override

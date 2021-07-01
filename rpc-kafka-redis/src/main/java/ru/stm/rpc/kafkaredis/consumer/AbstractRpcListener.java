@@ -24,7 +24,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
-abstract class AbstractRpcListener implements ApplicationListener {
+public abstract class AbstractRpcListener implements ApplicationListener {
 
     private final static AtomicLong polled = new AtomicLong(0);
     private final RpcResponseService rpcResponseService;

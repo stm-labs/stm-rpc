@@ -15,6 +15,7 @@ public class RpcProvider {
     private final ApplicationContext ctx;
     private final String topic;
     private final String namespace;
+
     private final KafkaTemplate kafka;
     private RpcService rpc;
 
@@ -35,6 +36,15 @@ public class RpcProvider {
     }
 
     public <T extends RpcRequest, R extends RpcResultType> Mono<R> call(T req, Class<R> rspClass) {
+        return rpc().callWithoutContext(req, topic, namespace, rspClass).flatMap(x -> {
+            if (x.isOk()) {
+                return Mono.just(x.getData());
+            }
+            return Mono.error(x.getError().toThrowable());
+        });
+    }
+
+    public <T extends RpcRequest, R extends RpcResultType> Mono<R> call(T req, String topic, Class<R> rspClass) {
         return rpc().callWithoutContext(req, topic, namespace, rspClass).flatMap(x -> {
             if (x.isOk()) {
                 return Mono.just(x.getData());
