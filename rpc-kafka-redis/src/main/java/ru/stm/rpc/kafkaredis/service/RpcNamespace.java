@@ -59,7 +59,7 @@ public class RpcNamespace {
         this.topics = new HashMap<>();
         this.consumerTopics = new HashSet<>();
 
-        log.info("Found RPC Namespace '{}', hasConsumer={}, hasProducer={}, hasRedis={}",
+        log.debug("Found RPC Namespace '{}', hasConsumer={}, hasProducer={}, hasRedis={}",
                 name, hasConsumer(), hasProducer(), hasRedis());
 
         verify();
@@ -73,7 +73,7 @@ public class RpcNamespace {
         if (hasConsumer()) {
             KafkaConsumerConfiguration kafka = props.getConsumer().getKafka();
             if (kafka == null || StringUtils.isBlank(kafka.getBootstrapServers())) {
-                throw new IllegalArgumentException(String.format("Consumer for namespace %s was set but Kafka Bootstrap Servers has not been setup", name));
+                throw new IllegalArgumentException(String.format("You set consumer for namespace %s but you have not setup Kafka Bootstrap Servers", name));
             }
 
             log.info("RPC Namespace '{}': consumer servers: {}", name, kafka.getBootstrapServers());
@@ -81,7 +81,7 @@ public class RpcNamespace {
         if (hasProducer()) {
             KafkaProducerConfiguration kafka = props.getProducer().getKafka();
             if (kafka == null || StringUtils.isBlank(kafka.getBootstrapServers())) {
-                throw new IllegalArgumentException(String.format("Producer for namespace %s was set but Kafka Bootstrap Servers has not been setup", name));
+                throw new IllegalArgumentException(String.format("You set producer for namespace %s but you have not setup Kafka Bootstrap Servers", name));
             }
 
             log.info("RPC Namespace '{}': producer servers: {}", name, kafka.getBootstrapServers());
@@ -93,10 +93,10 @@ public class RpcNamespace {
      */
     private void configure() {
         if (hasConsumer()) {
-            kafkaConsumer = createRpcListener(props);
+            kafkaConsumer = createRpcListener(props, ctx);
         }
         if (hasProducer()) {
-            kafkaProducer = createKafkaTemplate(props.getProducer().getKafka().getBootstrapServers());
+            kafkaProducer = createKafkaTemplate(props.getProducer().getKafka().getBootstrapServers(), props.getProducer().getMaxRequestSize());
         }
         if (hasRedis()) {
             if (props.getRedis().getPort() == 0) {
@@ -202,9 +202,13 @@ public class RpcNamespace {
             log.info("Creating Kafka consumer container, namespace={}, topics={}", name, consumerTopics);
 
             /* Create and start kafka container */
-            AbstractMessageListenerContainer cont = kafkaConsumer.createContainer(consumerTopics.toArray(new String[0]));
-            cont.setupMessageListener(new Listener());
-            cont.start();
+            if (props.getConsumer().isDisable()) {
+                log.warn("Consumer for namespace={} and topics={} is disabled!", name, consumerTopics);
+            } else {
+                AbstractMessageListenerContainer cont = kafkaConsumer.createContainer(consumerTopics.toArray(new String[0]));
+                cont.setupMessageListener(new Listener());
+                cont.start();
+            }
         }
         if (rpcListener != null) {
             rpcListener.onApplicationEvent(event);

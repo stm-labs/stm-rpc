@@ -71,6 +71,8 @@ public class KafkaRedisRpcProperties {
         @NotEmpty
         private String bootstrapServers;
 
+        private boolean enableUniqConsumerGroupByApplicationId = true;
+        
         private String groupId = "RPC";
     }
 
@@ -113,6 +115,13 @@ public class KafkaRedisRpcProperties {
 
         private int purgeThreshold = 500;
 
+        /**
+         * The maximum size of a request in bytes.
+         * This setting will limit the number of record batches the producer will send in a single request to avoid sending huge requests.
+         * This is also effectively a cap on the maximum record batch size. Note that the server has its own cap on record batch size
+         * which may be different from this.
+         */
+        private Integer maxRequestSize = null;
     }
 
 
@@ -121,6 +130,9 @@ public class KafkaRedisRpcProperties {
      */
     @Data
     public static class KafkaRedisConsumer {
+    	// disable consumer
+        private boolean disable = false;
+        
         private long statsInterval = 2000;
         private int executionTimeout = DEFAULT_RPC_TIMEOUT;
         private boolean showCurrentStats = false;

@@ -26,4 +26,6 @@ public @interface RemoteService {
     String topic();
 
     boolean transactional() default false;
+    
+    boolean useSpelForTopic() default false;
 }

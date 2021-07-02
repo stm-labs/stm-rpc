@@ -5,6 +5,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
@@ -30,14 +32,24 @@ import java.util.*;
 @Slf4j
 public class KafkaRpcConnectionFactory {
 
+    @Deprecated(forRemoval = true)
     public static ConcurrentKafkaListenerContainerFactory createRpcListener(KafkaRedisRpcProperties.KafkaRedisRpcItem props) {
         return defaultListenerContainer(props);
+    }
+
+    public static ConcurrentKafkaListenerContainerFactory createRpcListener(KafkaRedisRpcProperties.KafkaRedisRpcItem props,
+                                                                             ApplicationContext applicationContext) {
+        return defaultListenerContainer(props, applicationContext);
     }
 
     public static KafkaTemplate createKafkaTemplate(String bootstrapServer) {
         return new KafkaTemplate<>(defaultProducerFactory(bootstrapServer));
     }
 
+    public static KafkaTemplate createKafkaTemplate(String bootstrapServer, Integer maxRequestSize) {
+        return new KafkaTemplate<>(defaultProducerFactory(bootstrapServer, maxRequestSize));
+    }
+    
     private static ProducerFactory defaultProducerFactory(String bootstrapServers) {
         if (StringUtils.isEmpty(bootstrapServers)) {
             throw new IllegalArgumentException("bootstrapServers is empty");
@@ -50,12 +62,65 @@ public class KafkaRpcConnectionFactory {
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
+    private static ProducerFactory defaultProducerFactory(String bootstrapServers, Integer maxRequestSize) {
+        if (StringUtils.isEmpty(bootstrapServers)) {
+            throw new IllegalArgumentException("Пустой bootstrapServers");
+        }
+
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaSerializer.class);
+
+        if (maxRequestSize != null && maxRequestSize != 0) {
+            log.info("Producer property 'max.request.size' set to {} bytes", maxRequestSize);
+            configProps.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, maxRequestSize);
+        }
+        return new DefaultKafkaProducerFactory<>(configProps);
+    }
+
+    @Deprecated(forRemoval = true)
     private static ConcurrentKafkaListenerContainerFactory defaultListenerContainer(KafkaRedisRpcProperties.KafkaRedisRpcItem rpcProps) {
         ConcurrentKafkaListenerContainerFactory factory = new ConcurrentKafkaListenerContainerFactory<>();
 
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, rpcProps.getConsumer().getKafka().getBootstrapServers());
         props.put(ConsumerConfig.GROUP_ID_CONFIG, rpcProps.getConsumer().getKafka().getGroupId());
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaJsonDeserializer.class);
+        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+        factory.getContainerProperties().setMissingTopicsFatal(false);
+
+        KafkaJsonDeserializer jsonDeserializer = new KafkaJsonDeserializer();
+        DefaultKafkaConsumerFactory consumerFactory = new DefaultKafkaConsumerFactory(props, new StringDeserializer(), jsonDeserializer);
+        factory.setConsumerFactory(consumerFactory);
+        return factory;
+    }
+
+    private static ConcurrentKafkaListenerContainerFactory defaultListenerContainer(KafkaRedisRpcProperties.KafkaRedisRpcItem rpcProps,
+                                                                                     ApplicationContext applicationContext) {
+        ConcurrentKafkaListenerContainerFactory factory = new ConcurrentKafkaListenerContainerFactory<>();
+
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, rpcProps.getConsumer().getKafka().getBootstrapServers());
+
+        var appName = rpcProps.getConsumer().getKafka().getGroupId();
+
+        // every application (microservice) has it's own consumer group
+        if (rpcProps.getConsumer().getKafka().isEnableUniqConsumerGroupByApplicationId()) {
+
+            Map<String, Object> annotatedBeans = applicationContext.getBeansWithAnnotation(SpringBootApplication.class);
+            if (!annotatedBeans.isEmpty()) {
+                var first = annotatedBeans.keySet().stream().findFirst();
+                if (first.isPresent()) {
+                    appName = appName + "__" + first.get();
+                }
+            }
+        }
+        log.trace("Use consumerGroupId={} for rpcProps={}", appName, rpcProps);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, appName);
+
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaJsonDeserializer.class);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);

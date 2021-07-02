@@ -36,6 +36,8 @@ public class LocalHandlerRpcService<E extends RpcCtx> implements BeanPostProcess
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         boolean annotationPresent = bean.getClass().isAnnotationPresent(Rpc.class);
         if (annotationPresent) {
+
+            // TODO: support rpcTopicParser
             String topic = bean.getClass().getAnnotation(Rpc.class).topic();
 
             String namespace = bean.getClass().getAnnotation(Rpc.class).namespace();
@@ -45,7 +47,7 @@ public class LocalHandlerRpcService<E extends RpcCtx> implements BeanPostProcess
                 namespace = null;
             }
 
-            log.info("Found Rpc {}", topic);
+            log.debug("Found Rpc {}", topic);
 
             List<Method> methods = Arrays.stream(bean.getClass().getMethods())
                     .filter(x -> AnnotationUtils.findAnnotation(x, RpcHandler.class) != null).collect(Collectors.toList());

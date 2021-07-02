@@ -37,6 +37,7 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
     private ApplicationContext appCtx;
     private KafkaRedisRpcProperties rpcProps;
     private RpcModelHolder holder;
+    private RpcTopicParser rpcTopicParser;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -50,6 +51,7 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
     public void afterPropertiesSet() {
         StmConfigurationPropertiesBindingPostProcessor stmConfigurationPropertiesBindingPostProcessor = new StmConfigurationPropertiesBindingPostProcessor(appCtx);
         rpcProps = (KafkaRedisRpcProperties) stmConfigurationPropertiesBindingPostProcessor.postProcessBeforeInitialization(appCtx.getBean(KafkaRedisRpcProperties.class));
+        rpcTopicParser = appCtx.getBean(RpcTopicParser.class);
     }
 
     @Override
@@ -89,19 +91,19 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
                     log.debug("Found Remote Service: {}, namespaces = {}, topic = {}",
                             ClassUtils.getShortName(def.getBeanClassName()),
                             Arrays.asList(remoteService.namespace()),
-                            remoteService.topic());
+                            rpcTopicParser.parse(remoteService));
 
-                    holder.addTopic(RpcDirection.PRODUCER, remoteService.namespace(), remoteService.topic(), remoteService.transactional());
+                    holder.addTopic(RpcDirection.PRODUCER, remoteService.namespace(), rpcTopicParser.parse(remoteService), remoteService.transactional());
 
                     /* Add RpcProvider with topic and producer inside */
                     def.getConstructorArgumentValues().addGenericArgumentValue(
-                            new RpcProvider(appCtx, remoteService.topic(), remoteService.namespace(),
+                            new RpcProvider(appCtx, rpcTopicParser.parse(remoteService), remoteService.namespace(),
                                     holder.getProducer(remoteService.namespace())));
                 } else {
                     log.trace("Skipping Remote Service: {}, namespaces = {}, topic = {}",
                             ClassUtils.getShortName(def.getBeanClassName()),
                             Arrays.asList(remoteService.namespace()),
-                            remoteService.topic());
+                            rpcTopicParser.parse(remoteService));
 
                     /* Remove bean as it is not needed */
                     BeanDefinitionRegistry registry = (BeanDefinitionRegistry) factory;
@@ -118,10 +120,10 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
                 log.debug("Found RPC Handler: {}, namespace = {}, topic = {}",
                         ClassUtils.getShortName(def.getBeanClassName()),
                         rpc.namespace(),
-                        rpc.topic());
+                        rpcTopicParser.parse(rpc));
 
                 holder.ensureConsumer(rpc.namespace(), def.getBeanClassName());
-                holder.addTopic(RpcDirection.CONSUMER, rpc.namespace(), rpc.topic(), rpc.transactional());
+                holder.addTopic(RpcDirection.CONSUMER, rpc.namespace(), rpcTopicParser.parse(rpc), rpc.transactional());
             }
         }
 
@@ -151,7 +153,7 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
             }
 
             /* Create logger for service */
-            RemoteServiceLogger logger = new RemoteServiceLogger(beanClass, remoteService.namespace(), remoteService.topic(), RpcDirection.PRODUCER);
+            RemoteServiceLogger logger = new RemoteServiceLogger(beanClass, remoteService.namespace(), rpcTopicParser.parse(remoteService), RpcDirection.PRODUCER);
 
             /* Create proxy handler */
             RemoteInterfaceProxy handler = new RemoteInterfaceProxy(bean, remoteInterface, logger);
@@ -169,7 +171,7 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
         Rpc rpc = beanClass.getAnnotation(Rpc.class);
         if (rpc != null && !rpc.namespace().isEmpty()) {
             /* Add listener bean to topic */
-            holder.addListenerBean(rpc.namespace(), rpc.topic(), bean);
+            holder.addListenerBean(rpc.namespace(), rpcTopicParser.parse(rpc), bean);
         }
 
         return bean;

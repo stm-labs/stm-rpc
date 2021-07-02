@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.util.retry.Retry;
 import ru.stm.platform.BusinessError;
 import ru.stm.platform.StmExecutionError;
 import ru.stm.rpc.core.RpcResult;
@@ -94,7 +95,7 @@ public class RpcResponseService {
             KafkaRpcConnection connection = this.kafkaRpcConnection.get(namespace);
 
             connection.getRedisTemplate().opsForValue().set(key, getRpcRedisValue(rpcResult, key, traceId, operationName, connection), connection.getRedisttl())
-                    .retryBackoff(connection.getProps().getConsumer().getRetryTimes(), connection.getConsumerBackoff())
+                    .retryWhen(Retry.backoff(connection.getProps().getConsumer().getRetryTimes(), connection.getConsumerBackoff()))
                     .timeout(timeout)
                     .doOnError(x -> {
                         this.meterRegistry.counter("rpc_send_success", "RPC", "Consumer",
@@ -131,7 +132,7 @@ public class RpcResponseService {
             KafkaRpcConnection connection = this.kafkaRpcConnection.get(namespace);
 
             connection.getRedisTemplate().opsForValue().set(key, getRpcRedisValue(rpcResult, key, traceId, operationName, connection), connection.getRedisttl())
-                    .retryBackoff(connection.getProps().getConsumer().getRetryTimes(), connection.getConsumerBackoff())
+                    .retryWhen(Retry.backoff(connection.getProps().getConsumer().getRetryTimes(), connection.getConsumerBackoff()))
                     .timeout(timeout)
                     .doOnError(x -> {
                         this.meterRegistry.counter("rpc_send_error_business", "RPC", "Consumer",
@@ -156,6 +157,11 @@ public class RpcResponseService {
     private String getRpcRedisValue(RpcResult rpcResult, String key, String traceId, String operationName, KafkaRpcConnection conn) throws JsonProcessingException {
         String s = objectMapper.writeValueAsString(rpcResult);
 
+        if (logger.isTraceEnabled()) {
+            logger.trace("Prepare RPC response to namespace={} traceId={} key={} operationName={} response={}",
+                    conn.getNamespace(), traceId, key, operationName, s);
+        }
+        
         if (s.length() > conn.getProps().getResponseWarnThreshold()) {
             int printLength = conn.getProps().getPrintLength();
             if (s.length() < printLength) {
