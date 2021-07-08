@@ -7,7 +7,7 @@
     <parent>
         <groupId>ru.stm-labs.rpc</groupId>
         <artifactId>rpc-dependencies</artifactId>
-        <version>1.1.0-SNAPSHOT</version>
+        <version>1.1.0</version>
         <relativePath>../rpc-dependencies</relativePath>
     </parent>
 
