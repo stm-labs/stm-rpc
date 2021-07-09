@@ -1,7 +1,7 @@
 # STM RPC
 
-![Snapshots build](https://github.com/github/docs/actions/workflows/main.yml/badge.svg?branch=develop)
-![Latest maintenance branch](https://github.com/github/docs/actions/workflows/main.yml/badge.svg?branch=release/1.1.x)
+![Snapshots build](https://github.com/stm-labs/stm-rpc/actions/workflows/maven.yml/badge.svg?branch=develop)
+![Latest maintenance branch](https://github.com/stm-labs/stm-rpc/actions/workflows/maven.yml/badge.svg?branch=release/1.1.x)
 
 Remote Procedure Call framework for Spring Boot based on Kafka / Redis allows organizing two-way communication between services in DMZ and Enterprise Network. When Enterprise Network does not allow any income TCP connections.
 
