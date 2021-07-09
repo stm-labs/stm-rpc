@@ -10,6 +10,51 @@
     <description>RPC Framework Parent Pom</description>
     <packaging>pom</packaging>
 
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git://github.com/stm-labs/stm-rpc</connection>
+        <developerConnection>scm:git:ssh://github.com:stm-labs/stm-rpc</developerConnection>
+        <url>https://github.com/stm-labs/stm-rpc</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>NBakaev</id>
+            <name>Nikita Bakaev</name>
+            <email>ya@nbakaev.ru</email>
+            <organization>STM Labs</organization>
+            <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
+        </developer>
+        <developer>
+            <id>abagiev</id>
+            <name>Alexander Bagiev</name>
+            <email>bagyev@mail.ru</email>
+            <organization>STM Labs</organization>
+            <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
+        </developer>
+        <developer>
+            <id>korolkovad</id>
+            <name>Inna Korolkova</name>
+            <email>innkorolkovad@gmail.com</email>
+            <organization>STM Labs</organization>
+            <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
+        </developer>
+        <developer>
+            <id>abondin</id>
+            <name>Alexander Bondin</name>
+            <email>abondin@gmail.com</email>
+            <organization>STM Labs</organization>
+            <organizationUrl>http://stm-labs.ru/en/</organizationUrl>
+        </developer>
+    </developers>
+
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
@@ -17,7 +62,7 @@
         </snapshotRepository>
         <repository>
             <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/releases</url>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
         </repository>
     </distributionManagement>
 
