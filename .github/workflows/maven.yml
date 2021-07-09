@@ -1,13 +1,13 @@
 # This workflow will build a Java project with Maven
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: Java CI with Maven
+name: Java CI with Maven and deploy to Maven Central
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, main, deploy-test, release/* ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, main, deploy-test, release/* ]
 
 jobs:
   build:
@@ -21,5 +21,24 @@ jobs:
       with:
         java-version: '11'
         distribution: 'adopt'
+        server-id: ossrh
+        server-username: MAVEN_USERNAME
+        server-password: MAVEN_PASSWORD
     - name: Build with Maven
       run: mvn -B package --file pom.xml
+    - id:  install-secret-key
+      name: Install gpg secret key
+      run: |
+        cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
+        gpg --list-secret-keys --keyid-format LONG
+    - id: publish-to-central
+      name: Publish to Central Repository
+      env:
+        MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+        MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+      run: |
+        mvn \
+          --no-transfer-progress \
+          --batch-mode \
+          -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} \
+          clean deploy
