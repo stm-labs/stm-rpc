@@ -1,8 +1,15 @@
 # STM RPC
 
-[![Build Status](https://ci-oss.stm-labs.ru/api/badges/stm-labs/stm-rpc/status.svg)](https://ci-oss.stm-labs.ru/stm-labs/stm-rpc)
+![Snapshots build](https://github.com/github/docs/actions/workflows/main.yml/badge.svg?branch=develop)
+![Latest maintenance branch](https://github.com/github/docs/actions/workflows/main.yml/badge.svg?branch=release/1.1.x)
 
 Remote Procedure Call framework for Spring Boot based on Kafka / Redis allows organizing two-way communication between services in DMZ and Enterprise Network. When Enterprise Network does not allow any income TCP connections.
+
+**Branches**
+- main - latest stable release
+- develop - active development branch (next release)
+- release/** - maintenance branches
+
 
 **The framework provides out of box**
 
@@ -26,7 +33,7 @@ Please take a look on examples folder
 <dependency>
     <groupId>ru.stm-labs.rpc</groupId>
     <artifactId>rpc-kakfa-redis</artifactId>
-    <version>1.0.0.RELEASE</version>
+    <version>1.1.0.RELEASE</version>
 </dependency>
 ```
 
@@ -37,7 +44,7 @@ Please take a look on examples folder
 <dependency>
     <groupId>ru.stm-labs.rpc</groupId>
     <artifactId>rpc-kakfa-redis</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.2.0-SNAPSHOT</version>
 </dependency>
 .....
 <repositories>
@@ -59,4 +66,4 @@ Please take a look on examples folder
 
 
 ----
-STM Labs 2020 &copy;
+STM Labs 2021 &copy;
