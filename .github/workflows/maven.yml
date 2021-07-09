@@ -1,13 +1,11 @@
 # This workflow will build a Java project with Maven
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: Java CI with Maven and deploy to Maven Central
+name: Maven and deploy to Maven Central
 
 on:
   push:
-    branches: [ master, main, deploy-test, release/* ]
-  pull_request:
-    branches: [ master, main, deploy-test, release/* ]
+    branches: [ develop, release/* ]
 
 jobs:
   build:

@@ -6,9 +6,14 @@
 Remote Procedure Call framework for Spring Boot based on Kafka / Redis allows organizing two-way communication between services in DMZ and Enterprise Network. When Enterprise Network does not allow any income TCP connections.
 
 **Branches**
-- main - latest stable release
-- develop - active development branch (next release)
-- release/** - maintenance branches
+- `main` - latest stable release
+- `develop` - active development branch (next release)
+- `release/**` - maintenance branches
+
+**Builds**
+- `develop` branch builds maven artifacts and deploys to sonatype snapshot repository
+- `release/**` branches build maven artifacts and deploys to sonatype release repository
+- `bugix/**`, `feature/**`, `hotfix/**` branches build maven artifacts on pull request no publishing to maven
 
 
 **The framework provides out of box**
