@@ -24,8 +24,7 @@ public abstract class AbstractIntegrationTest {
 
         static KafkaContainer kafka = new KafkaContainer();
 
-        static GenericContainer redis = new GenericContainer("redis:3-alpine")
-                .withExposedPorts(6379);
+        static GenericContainer redis = new GenericContainer("redis:3-alpine").withExposedPorts(6379);
 
         public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
 

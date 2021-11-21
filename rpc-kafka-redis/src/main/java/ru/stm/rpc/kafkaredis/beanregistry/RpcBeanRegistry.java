@@ -1,18 +1,23 @@
 package ru.stm.rpc.kafkaredis.beanregistry;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 import ru.stm.rpc.core.Rpc;
@@ -38,10 +43,13 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
     private KafkaRedisRpcProperties rpcProps;
     private RpcModelHolder holder;
     private RpcTopicParser rpcTopicParser;
+    private InterfaceScanner classpathScanner;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.appCtx = applicationContext;
+        this.classpathScanner = new InterfaceScanner();
+        classpathScanner.addIncludeFilter(new AnnotationTypeFilter(RemoteService.class));
     }
 
     /**
@@ -54,10 +62,26 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
         rpcTopicParser = appCtx.getBean(RpcTopicParser.class);
     }
 
+    @SneakyThrows
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry beanDefinitionRegistry) throws BeansException {
+        for (BeanDefinition beanDefinition : classpathScanner.findCandidateComponents("ru")) {
+            Class<?> clazz = Class.forName(beanDefinition.getBeanClassName());
+            RemoteService remoteService = clazz.getAnnotation(RemoteService.class);
 
+            // For each class found, we create a custom bean definition
+            BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(clazz);
+            builder.addConstructorArgValue(clazz);
+
+            // We specify which method will be used to create instances of our interfaces
+            builder.setFactoryMethodOnBean(
+                    "createDynamicProxyBean",
+                    DynamicProxyBeanFactory.DYNAMIC_PROXY_BEAN_FACTORY
+            );
+            beanDefinitionRegistry.registerBeanDefinition(ClassUtils.getShortNameAsProperty(clazz), builder.getBeanDefinition());
+        }
     }
+
 
     /**
      * 2. Process all bean definitions for classes annotated with @Rpc, @RpcAsync and @RemoteService, and build model tree.
@@ -71,7 +95,6 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
             log.warn("rpcProps not found");
             return;
         }
-
         log.debug("Creating RPC model");
 
         /* Create and register holder with all RPC models and components */
@@ -81,54 +104,68 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
 
         /* Scan beans for RPC annotations */
         for (String name : factory.getBeanDefinitionNames()) {
-            BeanDefinition def = factory.getBeanDefinition(name);
-
-            /* Scan for RemoteService components and set constructor arguments */
-            RemoteService remoteService = factory.findAnnotationOnBean(name, RemoteService.class);
-            if (remoteService != null) {
-                /* Add topic only if producer is configured for this namespace */
-                if (holder.hasProducer(remoteService.namespace())) {
-                    log.debug("Found Remote Service: {}, namespaces = {}, topic = {}",
-                            ClassUtils.getShortName(def.getBeanClassName()),
-                            Arrays.asList(remoteService.namespace()),
-                            rpcTopicParser.parse(remoteService));
-
-                    holder.addTopic(RpcDirection.PRODUCER, remoteService.namespace(), rpcTopicParser.parse(remoteService), remoteService.transactional());
-
-                    /* Add RpcProvider with topic and producer inside */
-                    def.getConstructorArgumentValues().addGenericArgumentValue(
-                            new RpcProvider(appCtx, rpcTopicParser.parse(remoteService), remoteService.namespace(),
-                                    holder.getProducer(remoteService.namespace())));
-                } else {
-                    log.trace("Skipping Remote Service: {}, namespaces = {}, topic = {}",
-                            ClassUtils.getShortName(def.getBeanClassName()),
-                            Arrays.asList(remoteService.namespace()),
-                            rpcTopicParser.parse(remoteService));
-
-                    /* Remove bean as it is not needed */
-                    BeanDefinitionRegistry registry = (BeanDefinitionRegistry) factory;
-                    if (registry.containsBeanDefinition(name)) {
-                        registry.removeBeanDefinition(name);
-                        registry.registerAlias(RpcNameFactory.modelHolder(), name);
-                    }
-                }
-            }
-
-            /* Scan for Rpc components */
-            Rpc rpc = factory.findAnnotationOnBean(name, Rpc.class);
-            if (rpc != null && !rpc.namespace().isEmpty()) {
-                log.debug("Found RPC Handler: {}, namespace = {}, topic = {}",
-                        ClassUtils.getShortName(def.getBeanClassName()),
-                        rpc.namespace(),
-                        rpcTopicParser.parse(rpc));
-
-                holder.ensureConsumer(rpc.namespace(), def.getBeanClassName());
-                holder.addTopic(RpcDirection.CONSUMER, rpc.namespace(), rpcTopicParser.parse(rpc), rpc.transactional());
-            }
+            postProcessScanRemoteService(factory, name);
+            postProcessScanRpcComponent(factory, name);
         }
 
         /* Create topics in Kafka for all namespaces */
         KafkaEnsureTopicHelper.handleTopics(holder.namespaces());
+    }
+
+    /**
+     * Scan for RemoteService components and set constructor arguments
+     **/
+    private void postProcessScanRemoteService(ConfigurableListableBeanFactory factory, String name) {
+        BeanDefinition def = factory.getBeanDefinition(name);
+        RemoteService remoteService = factory.findAnnotationOnBean(name, RemoteService.class);
+        if (remoteService != null) {
+            /* Add topic only if producer is configured for this namespace */
+            if (holder.hasProducer(remoteService.namespace())) {
+                log.debug("Found Remote Service: {}, namespaces = {}, topic = {}",
+                        ClassUtils.getShortName(def.getBeanClassName()),
+                        Arrays.asList(remoteService.namespace()),
+                        rpcTopicParser.parse(remoteService));
+
+                holder.addTopic(RpcDirection.PRODUCER, remoteService.namespace(), rpcTopicParser.parse(remoteService), remoteService.transactional());
+
+                /* Add RpcProvider with topic and producer inside */
+                def.getConstructorArgumentValues().addGenericArgumentValue(getRpcProvider(remoteService));
+            } else {
+                log.trace("Skipping Remote Service: {}, namespaces = {}, topic = {}",
+                        ClassUtils.getShortName(def.getBeanClassName()),
+                        Arrays.asList(remoteService.namespace()),
+                        rpcTopicParser.parse(remoteService));
+
+                /* Remove bean as it is not needed */
+                BeanDefinitionRegistry registry = (BeanDefinitionRegistry) factory;
+                if (registry.containsBeanDefinition(name)) {
+                    registry.removeBeanDefinition(name);
+                    registry.registerAlias(RpcNameFactory.modelHolder(), name);
+                }
+            }
+        }
+    }
+
+    public RpcProvider getRpcProvider(RemoteService remoteService) {
+        return new RpcProvider(appCtx, rpcTopicParser.parse(remoteService), remoteService.namespace(),
+                holder.getProducer(remoteService.namespace()));
+    }
+
+    /**
+     * Scan for Rpc components
+     **/
+    private void postProcessScanRpcComponent(ConfigurableListableBeanFactory factory, String name) {
+        BeanDefinition def = factory.getBeanDefinition(name);
+        Rpc rpc = factory.findAnnotationOnBean(name, Rpc.class);
+        if (rpc != null && !rpc.namespace().isEmpty()) {
+            log.debug("Found RPC Handler: {}, namespace = {}, topic = {}",
+                    ClassUtils.getShortName(def.getBeanClassName()),
+                    rpc.namespace(),
+                    rpcTopicParser.parse(rpc));
+
+            holder.ensureConsumer(rpc.namespace(), def.getBeanClassName());
+            holder.addTopic(RpcDirection.CONSUMER, rpc.namespace(), rpcTopicParser.parse(rpc), rpc.transactional());
+        }
     }
 
     /**
@@ -194,5 +231,18 @@ public class RpcBeanRegistry implements BeanDefinitionRegistryPostProcessor, App
     @EventListener
     public void onApplicationEvent(ContextRefreshedEvent event) {
         holder.postProcess(event);
+    }
+
+
+    private static class InterfaceScanner extends ClassPathScanningCandidateComponentProvider {
+
+        InterfaceScanner() {
+            super(false);
+        }
+
+        @Override
+        protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
+            return beanDefinition.getMetadata().isInterface();
+        }
     }
 }

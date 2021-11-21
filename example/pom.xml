@@ -5,7 +5,7 @@
     <parent>
         <groupId>ru.stm-labs.rpc</groupId>
         <artifactId>rpc-dependencies</artifactId>
-	<version>1.2.0-SNAPSHOT</version>
+	    <version>1.2.0-SNAPSHOT</version>
         <relativePath>../rpc-dependencies</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -14,6 +14,7 @@
 
     <properties>
         <skipIntegrationTests>true</skipIntegrationTests>
+        <testcontainers.ver>1.16.2</testcontainers.ver>
     </properties>
 
     <build>
@@ -39,12 +40,14 @@
             <artifactId>rpc-router</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>kafka</artifactId>
-            <version>1.12.3</version>
+            <version>${testcontainers.ver}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
